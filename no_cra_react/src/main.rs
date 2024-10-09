@@ -1,3 +1,4 @@
+use std::env;
 use std::process::{Command, Output};
 
 fn exec_command(command: &str, args: &[&str]) -> Result<Output, String> {
@@ -14,11 +15,15 @@ fn exec_command(command: &str, args: &[&str]) -> Result<Output, String> {
     }
 }
 
-fn validate_output(result: Result<Output, String>) {
+fn validate_output(result: Result<Output, String>, message: &str, verbose: bool) {
+    println!("{}", message);
+
     match result {
         Ok(output) => {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            println!("The executed command output is \n{}", stdout);
+            if verbose {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                println!("The executed command output is \n{}", stdout);
+            }
         }
         Err(error) => {
             println!("error occurred \n{}", error)
@@ -27,8 +32,22 @@ fn validate_output(result: Result<Output, String>) {
 }
 
 fn main() {
-    println!("[*] script to create a react app from scratch...");
 
-    validate_output(exec_command("ls", &["-lh"]));
-    
+    println!("[*] script to create a react app from scratch...");
+    let args: Vec<String> = env::args().collect();
+    let verbose = args.contains(&String::from("-v"));
+
+    let commands = vec![
+        (vec!["npm", "init", "-y"], "[*] initializing npm project."),
+        (vec!["npm", "install", "react", "react-dom"], "[*] installing react & react-dom"),
+        (vec!["npm", "install", "webpack", "--save-dev"], "[*] installing webpack"),
+        (vec!["npm", "install", "webpack-cli", "webpack-dev-server", "--save-dev"], "[*] installing webpack cli & dev-server"),
+        (vec!["npm", "install", "@babel/core", "@babel/preset-react", "@babel/preset-env", "babel-loader", "--save-dev"], "[*] installing babel & babel-components"),
+        (vec!["npm", "install", "html-webpack-plugin", "--save-dev"], "[*] installing html-webpack-plugin"),
+        (vec!["touch", "webpack.config.js"], "[*] creating webpack.config.js")
+    ];
+
+    for (command, message) in commands {
+        validate_output(exec_command(command[0], &command[1..]), message, verbose);
+    }
 }
