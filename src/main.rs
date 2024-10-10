@@ -1,7 +1,8 @@
-use std::fs::{File, create_dir_all};
-use std::io::{Write};
+use std::fs::{File, create_dir_all, read_to_string, write};
+use std::io::Write;
 use std::env;
 use std::process::{Command, Output};
+use serde_json::{Value, from_str};
 
 fn exec_command(command: &str, args: &[&str]) -> Result<Output, String> {
     let output = Command::new(command)
@@ -39,6 +40,22 @@ fn create_file(file_name: &str, content: &str) -> Result<(), String> {
     Ok(())
 }
 
+fn package_json_modifier() -> Result<(), Box<dyn std::error::Error>> {
+    let contents  = read_to_string("package.json")?;
+    let mut vals:Value = from_str(&contents).unwrap();
+
+    
+    vals["scripts"]["build"] = Value::String("webpack --mode production".to_string());
+    vals["scripts"]["start"] = Value::String("webpack-dev-server --mode development --open --hot".to_string());
+    
+    let updated_contents = serde_json::to_string_pretty(&vals)?;
+    
+    println!("Updated package.json:\n{}", updated_contents);
+    
+    write("package.json", updated_contents)?;
+    Ok(())
+ }
+
 
 
 fn main() {
@@ -46,12 +63,14 @@ fn main() {
     println!("********* script to create a react app from scratch. *********");
 
     let args: Vec<String> = env::args().collect();
-    let verbose = args.contains(&String::from("-v"));
+    let verbose: bool = args.contains(&String::from("-v"));
 
     if let Err(e) = create_dir_all("react-app") {
         eprintln!("Failed to create public directory: {}", e);
         return;
     }
+
+    println!("[+] created \"react-app\" directory.");
 
     std::env::set_current_dir("react-app").expect("Failed to change directory");
 
@@ -62,7 +81,6 @@ fn main() {
         (vec!["npm", "install", "webpack-cli", "webpack-dev-server", "--save-dev"], "[*] installing webpack cli & dev-server"),
         (vec!["npm", "install", "@babel/core", "@babel/preset-react", "@babel/preset-env", "babel-loader", "--save-dev"], "[*] installing babel & babel-components"),
         (vec!["npm", "install", "html-webpack-plugin", "--save-dev"], "[*] installing html-webpack-plugin")
-        //(vec!["touch", "webpack.config.js"], "[*] creating webpack.config.js")
     ];
 
     for (command, message) in commands {
@@ -97,7 +115,7 @@ module.exports={
     },
     plugins: [
         new HTMLWebpackPlugin({
-            template: "./src/index.html"
+            template: "./public/index.html"
         })
     ],
     module: {
@@ -167,4 +185,5 @@ export default App;
             }
         }
     }
+    package_json_modifier().unwrap()
 }
