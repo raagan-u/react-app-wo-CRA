@@ -50,7 +50,7 @@ fn package_json_modifier() -> Result<(), Box<dyn std::error::Error>> {
     
     let updated_contents = serde_json::to_string_pretty(&vals)?;
     
-    println!("Updated package.json:\n{}", updated_contents);
+    //println!("Updated package.json:\n{}", updated_contents);
     
     write("package.json", updated_contents)?;
     Ok(())
@@ -186,4 +186,5 @@ export default App;
         }
     }
     package_json_modifier().unwrap()
+    println!("change into \"react-app\" directory and type \"npm run start\" to start react app!!")
 }
